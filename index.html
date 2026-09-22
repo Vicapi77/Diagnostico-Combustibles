@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulario de Seguimiento por Área</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --g900:#14532d; --g700:#15803d; --g600:#16a34a; --g100:#dcfce7; --g50:#f0fdf4;
+    --red:#dc2626; --red50:#fef2f2; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#f4f7f5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,var(--g900),var(--g600));color:#fff;padding:28px 16px 70px}
+  header .wrap{max-width:820px;margin:auto}
+  header h1{margin:0 0 6px;font-size:1.6rem}
+  header p{margin:0;opacity:.85}
+  main{max-width:820px;margin:-50px auto 40px;padding:0 16px}
+  .card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:22px;margin-bottom:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:640px){.grid3{grid-template-columns:1fr}}
+  label.f{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  input[type=text],select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g600);box-shadow:0 0 0 3px var(--g100)}
+  .sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .sec-h h2{margin:0;font-size:1.1rem;color:var(--g900);display:flex;align-items:center;gap:10px}
+  .num{background:var(--g700);color:#fff;border-radius:8px;width:28px;height:28px;display:grid;place-items:center;font-size:.85rem}
+  .badge{font-size:.78rem;color:var(--muted);background:var(--g50);padding:4px 10px;border-radius:20px}
+  .q{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-top:1px solid var(--line)}
+  .q .t{flex:1;font-size:.95rem;line-height:1.35}
+  .q.missing .t{color:var(--red)}
+  .yn{display:flex;gap:8px;flex-shrink:0}
+  .yn input{display:none}
+  .yn label{cursor:pointer;min-width:62px;text-align:center;padding:8px 12px;border:1.5px solid var(--line);border-radius:9px;font-weight:600;font-size:.88rem;color:var(--muted);user-select:none;transition:.15s}
+  .yn input[value=SI]:checked+label{background:var(--g600);border-color:var(--g600);color:#fff}
+  .yn input[value=NO]:checked+label{background:var(--red);border-color:var(--red);color:#fff}
+  .sub{font-size:.8rem;font-weight:700;color:var(--g700);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+  .progress{position:sticky;top:0;z-index:5;background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:18px;display:flex;align-items:center;gap:14px}
+  .bar{flex:1;height:8px;background:var(--line);border-radius:10px;overflow:hidden}
+  .bar div{height:100%;width:0;background:var(--g600);transition:width .25s}
+  .progress span{font-size:.85rem;font-weight:600;color:var(--g900);white-space:nowrap}
+  button{font:inherit;font-weight:600;border:none;border-radius:10px;padding:13px 22px;cursor:pointer}
+  .btn{background:var(--g700);color:#fff;width:100%;font-size:1rem}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:13px 20px;border-radius:10px;color:#fff;font-weight:600;display:none;z-index:10;max-width:90%}
+  .toast.ok{background:var(--g700)} .toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Diagnostico de Combustibles</h1>
+  <p>Responde SÍ / NO en cada punto.</p>
+</div></header>
+
+<main>
+  <div class="card">
+    <div class="grid3">
+      <div><label class="f">ID</label><input type="text" id="f_id" placeholder="Ej. 1234"></div>
+      <div><label class="f">Planta</label><input type="text" id="f_planta" placeholder="Planta"></div>
+      <div><label class="f">Gerente</label><input type="text" id="f_gerente" placeholder="Nombre del gerente"></div>
+    </div>
+  </div>
+
+  <div class="progress"><div class="bar"><div id="bar"></div></div><span id="ptxt">0 / 0</span></div>
+
+  <form id="form"></form>
+
+  <div class="card">
+    <label class="f">Observaciones</label>
+    <textarea id="f_obs" rows="3" placeholder="Comentarios adicionales (opcional)"></textarea>
+  </div>
+
+  <button class="btn" id="send">Registrar</button>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== PEGA AQUÍ LA URL DEL WEB APP DE APPS SCRIPT ======
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeeiaEYkZMkdzMu4b41uwJ0LTKNkuMM7VAiRNCKqp-ZxydW8lPKUYzwmU3jtIxyBnn/exec";
+
+const SECCIONES = [
+  {area:"Operaciones", preguntas:[
+    "Seguimiento a la unidad","Seguimiento al operador","Tiempos en ruta","Acta compromiso"]},
+  {area:"Mantenimiento", preguntas:[
+    "Reporte de mantenimiento preventivo o correctivo de unidades que más pierden",
+    "Seguimiento a fallas que generan la pérdida de combustible",
+    "Llantas calibradas","Programación a taller (en atención pendiente)"]},
+  {area:"Capacitación", preguntas:["Mal manejo de la unidad","Excesos de velocidad"]},
+  {area:"RH", preguntas:["Seguimiento al operador","Aplicaron descuentos","Baja"]},
+  {area:"Logística", preguntas:[
+    "Intermitencia en GPS","Desconexión de equipo","Reparación de equipo",
+    "Desplazamiento no autorizado fuera de ruta"]},
+  {area:"Rendimiento en la unidad", preguntas:[
+    "Kilometraje mínimo para carga por tipo de unidad (autobuses 500 y 650 km)",
+    "Km vacío para carga","Mal manejo / velocidad alta / bajo score","Ralentí elevado"]},
+  {area:"Combustibles", grupos:[
+    {titulo:"Auditoría", preguntas:[
+      "Auditoría programada","Rangos de operación RPM adecuada por tipo de unidad",
+      "Recorrido de la unidad vía GPS comparando la ruta real contra la carta máster asignada",
+      "Auditoría realizada","Dictamen de auditoría"]},
+    {titulo:"Sellado", preguntas:[
+      "Sellado de unidad","Trampa instalada","Filtros de combustible sellados",
+      "Conexiones, tuercas y grifo de tanque","Hubodómetro: colocar la resina",
+      "Colocar resina tapa sillón / cinta de seguridad en tablero","Firmar la responsiva de sellado"]}
+  ]}
+];
+
+// Construir formulario
+const form = document.getElementById("form");
+const PREGUNTAS = []; // {key, area, texto}
+let n = 0;
+SECCIONES.forEach((s, i) => {
+  const card = document.createElement("div");
+  card.className = "card";
+  const grupos = s.grupos || [{titulo:null, preguntas:s.preguntas}];
+  const total = grupos.reduce((a,g)=>a+g.preguntas.length,0);
+  card.innerHTML = `<div class="sec-h"><h2><span class="num">${i+1}</span>${s.area}</h2><span class="badge" data-area="${i}">0/${total}</span></div>`;
+  grupos.forEach(g => {
+    if (g.titulo) card.insertAdjacentHTML("beforeend", `<div class="sub">${g.titulo}</div>`);
+    g.preguntas.forEach(p => {
+      const key = "q" + (n++);
+      PREGUNTAS.push({key, area:s.area, texto:p, sec:i});
+      card.insertAdjacentHTML("beforeend", `
+        <div class="q" id="w_${key}">
+          <div class="t">${p}</div>
+          <div class="yn">
+            <input type="radio" name="${key}" id="${key}_si" value="SI"><label for="${key}_si">SÍ</label>
+            <input type="radio" name="${key}" id="${key}_no" value="NO"><label for="${key}_no">NO</label>
+          </div>
+        </div>`);
+    });
+  });
+  form.appendChild(card);
+});
+
+function val(key){ const r = form.querySelector(`input[name="${key}"]:checked`); return r ? r.value : ""; }
+
+function actualizar(){
+  let hechas = 0; const porSec = {};
+  PREGUNTAS.forEach(p => {
+    const v = val(p.key);
+    if (v) { hechas++; porSec[p.sec] = (porSec[p.sec]||0)+1; document.getElementById("w_"+p.key).classList.remove("missing"); }
+  });
+  document.querySelectorAll(".badge").forEach(b => {
+    const i = b.dataset.area; const tot = b.textContent.split("/")[1];
+    b.textContent = `${porSec[i]||0}/${tot}`;
+  });
+  document.getElementById("bar").style.width = (hechas/PREGUNTAS.length*100)+"%";
+  document.getElementById("ptxt").textContent = `${hechas} / ${PREGUNTAS.length}`;
+}
+form.addEventListener("change", actualizar);
+actualizar();
+
+function toast(msg, tipo){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast " + tipo; t.style.display = "block";
+  setTimeout(()=> t.style.display = "none", 3500);
+}
+
+document.getElementById("send").addEventListener("click", async () => {
+  const id = f_id.value.trim(), planta = f_planta.value.trim(), gerente = f_gerente.value.trim();
+  if (!id || !planta || !gerente) { toast("Completa ID, Planta y Gerente", "err"); window.scrollTo({top:0,behavior:"smooth"}); return; }
+
+  const faltan = PREGUNTAS.filter(p => !val(p.key));
+  if (faltan.length) {
+    faltan.forEach(p => document.getElementById("w_"+p.key).classList.add("missing"));
+    document.getElementById("w_"+faltan[0].key).scrollIntoView({behavior:"smooth", block:"center"});
+    toast(`Faltan ${faltan.length} preguntas por contestar`, "err");
+    return;
+  }
+
+  const headers = ["Fecha", "ID", "Planta", "Gerente"];
+  const values  = [new Date().toLocaleString("es-MX"), id, planta, gerente];
+  PREGUNTAS.forEach(p => { headers.push(`${p.area} - ${p.texto}`); values.push(val(p.key)); });
+  const si = PREGUNTAS.filter(p => val(p.key)==="SI").length;
+  headers.push("Total SI", "Total NO", "% Cumplimiento", "Observaciones");
+  values.push(si, PREGUNTAS.length - si, Math.round(si/PREGUNTAS.length*100) + "%", f_obs.value.trim());
+
+  const btn = document.getElementById("send");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    await fetch(WEB_APP_URL, {
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({headers, values})
+    });
+    toast("✓ Registro guardado", "ok");
+    form.reset(); f_id.value = ""; f_planta.value = ""; f_gerente.value = ""; f_obs.value = "";
+    actualizar(); window.scrollTo({top:0,behavior:"smooth"});
+  } catch(e) {
+    toast("Error al enviar. Revisa tu conexión.", "err");
+  } finally {
+    btn.disabled = false; btn.textContent = "Registrar";
+  }
+});
+</script>
+</body>
+</html>

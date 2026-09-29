@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Sanciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --g900:#14532d; --g700:#15803d; --g600:#16a34a; --g100:#dcfce7; --g50:#f0fdf4;
+    --red:#dc2626; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb; --bg:#f4f7f5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,var(--g900),var(--g600));color:#fff;padding:28px 16px 70px}
+  header .wrap{max-width:760px;margin:auto}
+  header a{color:#fff;opacity:.8;font-size:.85rem;text-decoration:none}
+  header h1{margin:8px 0 6px;font-size:1.6rem}
+  header p{margin:0;opacity:.85}
+  main{max-width:760px;margin:-50px auto 40px;padding:0 16px}
+  .card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:22px;margin-bottom:18px}
+  .card h2{margin:0 0 16px;font-size:1.05rem;color:var(--g900);display:flex;align-items:center;gap:10px}
+  .num{background:var(--g700);color:#fff;border-radius:8px;width:28px;height:28px;display:grid;place-items:center;font-size:.85rem}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.grid2{grid-template-columns:1fr}}
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  label.f{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.03em}
+  label.f.missing{color:var(--red)}
+  input[type=text],select,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g600);box-shadow:0 0 0 3px var(--g100)}
+  .bad{border-color:var(--red)!important}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pills input{display:none}
+  .pills label{cursor:pointer;padding:9px 14px;border:1.5px solid var(--line);border-radius:22px;font-size:.9rem;font-weight:500;color:var(--ink);user-select:none;transition:.15s}
+  .pills label:hover{border-color:var(--g600)}
+  .pills input:checked+label{background:var(--g600);border-color:var(--g600);color:#fff}
+  button{font:inherit;font-weight:600;border:none;border-radius:10px;padding:13px 22px;cursor:pointer}
+  .btn{background:var(--g700);color:#fff;width:100%;font-size:1rem}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:13px 20px;border-radius:10px;color:#fff;font-weight:600;display:none;z-index:10;max-width:90%}
+  .toast.ok{background:var(--g700)} .toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Registro de Sanciones</h1>
+  <p>Captura la sanción. Las respuestas se guardan en Google Sheets.</p>
+</div></header>
+
+<main>
+  <div class="card">
+    <h2><span class="num">1</span>Datos generales</h2>
+    <div class="grid2">
+      <div class="field"><label class="f">ID</label><input type="text" id="f_id" placeholder="ID"></div>
+      <div class="field"><label class="f">Planta</label><input type="text" id="f_planta" placeholder="Planta"></div>
+      <div class="field"><label class="f">Nómina</label><input type="text" id="f_nomina" placeholder="No. de nómina"></div>
+      <div class="field"><label class="f">Coordinador</label><input type="text" id="f_coord" placeholder="Nombre del coordinador"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>Sanción</h2>
+    <div class="field">
+      <label class="f" id="l_motivo">Motivo de sanción</label>
+      <select id="f_motivo"><option value="">Selecciona un motivo…</option></select>
+    </div>
+    <div class="field"><label class="f" id="l_tipo">1er evento — Tipo de sanción</label><div class="pills" id="p_tipo"></div></div>
+    <div class="field"><label class="f" id="l_aplica">Aplica a</label><div class="pills" id="p_aplica"></div></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>Estatus</h2>
+    <div class="field"><label class="f" id="l_estatus">Estatus</label><div class="pills" id="p_estatus"></div></div>
+    <div class="field"><label class="f" id="l_motest">Motivo de estatus</label><div class="pills" id="p_motest"></div></div>
+    <div class="field"><label class="f">Observaciones</label><textarea id="f_obs" rows="3" placeholder="Comentarios adicionales (opcional)"></textarea></div>
+  </div>
+
+  <button class="btn" id="send">Registrar</button>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== PEGA AQUÍ LA URL DEL WEB APP DE APPS SCRIPT (del Sheet de sanciones) ======
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwR1p9L4nuCZxVMFf4ilyUZ9_nPTGnszpU5sRF9-aVNiwDc7LUGArqFGLgvebwcvqWQ8Q/exec";
+
+const OPCIONES = {
+  motivo: ["Carga sin bitácora / Tapón de combustible","Carga fuera de horario","Rescate por combustible",
+    "Alteración de bitácoras","Desplazamiento no autorizado","Sustracción de combustible",
+    "Bajo Rto / Mantener Rto","Ralentí elevado","Manipulación de fleje","Manipulación de Km",
+    "Mal manejo de unidad","Diferencia en cargas","Manipulación de GPS","Manipulación de sellado",
+    "Manipulación de trampa","n/a"],
+  tipo:    ["Sanción administrativa","Descuento","Descuento & Baja","n/a"],
+  aplica:  ["Operador / Despachador","Operador / Coordinador","Responsable","n/a"],
+  estatus: ["Aplicado","Pendiente","n/a"],
+  motest:  ["Sindicato","Falta de operadores","Falta de seguimiento","Operaciones"]
+};
+
+OPCIONES.motivo.forEach(o => f_motivo.insertAdjacentHTML("beforeend", `<option>${o}</option>`));
+["tipo","aplica","estatus","motest"].forEach(k => {
+  const box = document.getElementById("p_"+k);
+  OPCIONES[k].forEach((o,i) => box.insertAdjacentHTML("beforeend",
+    `<input type="radio" name="${k}" id="${k}_${i}" value="${o}"><label for="${k}_${i}">${o}</label>`));
+});
+
+const radio = k => (document.querySelector(`input[name="${k}"]:checked`)||{}).value || "";
+
+document.addEventListener("change", e => {
+  if (e.target.name) document.getElementById("l_"+e.target.name)?.classList.remove("missing");
+  if (e.target.id === "f_motivo") { f_motivo.classList.remove("bad"); l_motivo.classList.remove("missing"); }
+});
+document.querySelectorAll("input[type=text]").forEach(i => i.addEventListener("input", () => i.classList.remove("bad")));
+
+function toast(msg, tipo){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast " + tipo; t.style.display = "block";
+  setTimeout(()=> t.style.display = "none", 3500);
+}
+
+document.getElementById("send").addEventListener("click", async () => {
+  const datos = {
+    "ID": f_id.value.trim(), "Planta": f_planta.value.trim(),
+    "Nómina": f_nomina.value.trim(), "Coordinador": f_coord.value.trim(),
+    "Motivo de sanción": f_motivo.value,
+    "1er evento - Tipo de sanción": radio("tipo"), "Aplica a": radio("aplica"),
+    "Estatus": radio("estatus"), "Motivo de estatus": radio("motest")
+  };
+
+  // Validación
+  let primero = null;
+  [["ID",f_id],["Planta",f_planta],["Nómina",f_nomina],["Coordinador",f_coord],["Motivo de sanción",f_motivo]]
+    .forEach(([k,el]) => { if (!datos[k]) { el.classList.add("bad"); primero = primero || el; } });
+  if (!datos["Motivo de sanción"]) l_motivo.classList.add("missing");
+  [["1er evento - Tipo de sanción","tipo"],["Aplica a","aplica"],["Estatus","estatus"],["Motivo de estatus","motest"]]
+    .forEach(([k,id]) => { if (!datos[k]) { const l = document.getElementById("l_"+id); l.classList.add("missing"); primero = primero || l; } });
+  if (primero) { primero.scrollIntoView({behavior:"smooth", block:"center"}); toast("Completa los campos marcados en rojo","err"); return; }
+
+  const headers = ["Fecha", ...Object.keys(datos), "Observaciones"];
+  const values  = [new Date().toLocaleString("es-MX"), ...Object.values(datos), f_obs.value.trim()];
+
+  const btn = document.getElementById("send");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  try {
+    await fetch(WEB_APP_URL, {
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({headers, values})
+    });
+    toast("✓ Sanción registrada", "ok");
+    document.querySelectorAll("input[type=text],textarea").forEach(i => i.value = "");
+    document.querySelectorAll("input[type=radio]").forEach(i => i.checked = false);
+    f_motivo.value = "";
+    window.scrollTo({top:0,behavior:"smooth"});
+  } catch(e) {
+    toast("Error al enviar. Revisa tu conexión.", "err");
+  } finally {
+    btn.disabled = false; btn.textContent = "Registrar";
+  }
+});
+</script>
+</body>
+</html>

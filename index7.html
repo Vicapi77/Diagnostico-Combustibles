@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formularios LIPU</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--g900:#14532d;--g700:#15803d;--g600:#16a34a;--g100:#dcfce7;--ink:#1f2937;--muted:#6b7280;--bg:#f4f7f5}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:linear-gradient(135deg,var(--g900),var(--g600));color:#fff;padding:36px 16px 80px;text-align:center}
+  header h1{margin:0 0 6px;font-size:1.8rem}
+  header p{margin:0;opacity:.85}
+  main{max-width:760px;margin:-50px auto 40px;padding:0 16px;display:grid;gap:16px}
+  a.card{display:flex;align-items:center;gap:18px;background:#fff;border-radius:14px;padding:22px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);text-decoration:none;color:inherit;transition:.15s;border:2px solid transparent}
+  a.card:hover{transform:translateY(-2px);border-color:var(--g600)}
+  .ico{width:54px;height:54px;border-radius:12px;background:var(--g100);color:var(--g700);display:grid;place-items:center;flex-shrink:0}
+  .ico svg{width:28px;height:28px}
+  h2{margin:0 0 4px;font-size:1.1rem;color:var(--g900)}
+  .card p{margin:0;color:var(--muted);font-size:.9rem}
+  .arrow{margin-left:auto;color:var(--g600);font-size:1.4rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Formularios LIPU</h1>
+  <p>Selecciona el formulario que deseas capturar</p>
+</header>
+<main>
+  <a class="card" href="formulario_seguimiento.html">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+    <div><h2>Seguimiento por Área</h2><p>Checklist SÍ/NO: Operaciones, Mantenimiento, RH, Logística, Combustibles y más</p></div>
+    <span class="arrow">›</span>
+  </a>
+  <a class="card" href="formulario_sanciones.html">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+    <div><h2>Registro de Sanciones</h2><p>Motivo, tipo de sanción, a quién aplica y estatus</p></div>
+    <span class="arrow">›</span>
+  </a>
+</main>
+</body>
+</html>

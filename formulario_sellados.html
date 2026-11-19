@@ -45,7 +45,9 @@
   .q.sub .t{padding-left:18px;color:#374151}
   .q.sub .t::before{content:"↳ ";color:var(--muted)}
   .q.missing .t{color:var(--red)}
-  .q.hidden{display:none}
+  .q.hidden,.km.hidden{display:none}
+  .km{padding:0 0 14px 18px}
+  .km input{max-width:260px}
   .yn{display:flex;gap:8px;flex-shrink:0}
   .yn input{display:none}
   .yn label{cursor:pointer;min-width:62px;text-align:center;padding:8px 12px;border:1.5px solid var(--line);border-radius:9px;font-weight:600;font-size:.88rem;color:var(--muted);user-select:none;transition:.15s}
@@ -167,7 +169,9 @@ const PREGUNTAS = [
   {k:"ac",       t:"Cuenta con AC"},
   {k:"funciona", t:"Funciona", sub:true},
   {k:"directo",  t:"Está directo", sub:true},
-  {k:"trampa",   t:"Tiene trampa"}
+  {k:"trampa",   t:"Tiene trampa"},
+  {k:"odometro", t:"Cuenta con odómetro",           km:"Kilometraje odómetro"},
+  {k:"tablero",  t:"Funciona el tablero de la unidad", km:"Kilometraje tablero"}
 ];
 const cont = document.getElementById("preguntas");
 PREGUNTAS.forEach(p => cont.insertAdjacentHTML("beforeend", `
@@ -177,7 +181,9 @@ PREGUNTAS.forEach(p => cont.insertAdjacentHTML("beforeend", `
       <input type="radio" name="${p.k}" id="${p.k}_si" value="SI"><label for="${p.k}_si">SÍ</label>
       <input type="radio" name="${p.k}" id="${p.k}_no" value="NO"><label for="${p.k}_no">NO</label>
     </div>
-  </div>`));
+  </div>${p.km ? `
+  <div class="km hidden" id="kw_${p.k}"><label class="f">${p.km}</label>
+    <input type="number" id="km_${p.k}" inputmode="numeric" min="0" placeholder="Ej. 125430"></div>` : ""}`));
 const val = k => (document.querySelector(`input[name="${k}"]:checked`)||{}).value || "";
 const visible = p => !(p.sub && val("ac") === "NO");
 
@@ -186,6 +192,7 @@ function refrescar(){
     const w = document.getElementById("w_"+p.k);
     w.classList.toggle("hidden", !visible(p));
     if (val(p.k)) w.classList.remove("missing");
+    if (p.km) document.getElementById("kw_"+p.k).classList.toggle("hidden", val(p.k) !== "SI");
   });
 }
 cont.addEventListener("change", refrescar);
@@ -204,6 +211,7 @@ document.getElementById("send").addEventListener("click", async () => {
   [f_unidad, f_planta, f_fcol, f_fgel].forEach(el => { if (!el.value.trim()) marcar(el); });
   if (!op.value) marcar(inp);
   PREGUNTAS.filter(visible).forEach(p => { if (!val(p.k)) { const w = document.getElementById("w_"+p.k); w.classList.add("missing"); primero = primero || w; } });
+  PREGUNTAS.filter(p => p.km && val(p.k) === "SI").forEach(p => { const k = document.getElementById("km_"+p.k); if (!k.value.trim()) marcar(k); });
   if (primero) {
     primero.scrollIntoView({behavior:"smooth", block:"center"});
     toast(!op.value && inp.value ? "La nómina no está en el listado" : "Completa los campos marcados en rojo", "err");
@@ -217,7 +225,10 @@ document.getElementById("send").addEventListener("click", async () => {
     "Nómina": inp.value.trim(),
     "Operador": op.value
   };
-  PREGUNTAS.forEach(p => datos[p.t] = visible(p) ? val(p.k) : "N/A");
+  PREGUNTAS.forEach(p => {
+    datos[p.t] = visible(p) ? val(p.k) : "N/A";
+    if (p.km) datos[p.km] = val(p.k) === "SI" ? document.getElementById("km_"+p.k).value.trim() : "N/A";
+  });
   datos["Fecha de colocación"] = fmt(f_fcol.value);
   datos["Fecha sellado gel coat"] = fmt(f_fgel.value);
 
